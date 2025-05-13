@@ -163,6 +163,43 @@ graph TD
     N --> O
 ```
 
+## 📧 Sistema de Notificação por Email
+
+O bot inclui um sistema de notificação por email que envia alertas automáticos quando um novo QR code é gerado. Isso facilita a reconexão do bot caso a sessão do WhatsApp seja desconectada.
+
+### Funcionamento
+
+1. Quando um novo QR code é gerado (na inicialização ou após desconexão), o sistema envia automaticamente um email para o administrador
+2. O email contém um link direto para a página do QR code
+3. O administrador pode clicar no link e escanear o QR code para reconectar o bot
+
+### Configuração
+
+Para que o sistema de notificação funcione, as seguintes variáveis de ambiente devem estar configuradas:
+
+```env
+EMAIL_USER=seu-email@gmail.com
+EMAIL_PASS=sua-senha-de-app
+ADMIN_EMAIL=email-do-administrador@gmail.com
+RENDER_EXTERNAL_URL=https://seu-app.onrender.com  # Apenas em produção
+```
+
+### Endpoints Relacionados
+
+- `GET /qrcode`: Exibe a página com o QR code para escaneamento
+- `GET /qrcode-status`: Retorna o status atual do QR code e da conexão
+- `GET /teste-email`: Testa o envio de email de notificação
+
+## 🔄 Conexão Robusta
+
+O sistema implementa mecanismos para manter a conexão do WhatsApp estável:
+
+1. **Monitoramento de Estado**: Verifica periodicamente o estado da conexão
+2. **Reconexão Automática**: Tenta reconectar automaticamente em caso de desconexão
+3. **Resolução de Conflitos**: Resolve conflitos de sessão automaticamente
+4. **Notificação por Email**: Envia email quando é necessário escanear um novo QR code
+```
+
 ## 🛠️ Tecnologias Utilizadas
 
 - **Node.js**: Ambiente de execução JavaScript
@@ -173,6 +210,7 @@ graph TD
 - **QRCode**: Geração de QR codes para pagamentos PIX
 - **Axios**: Cliente HTTP para requisições
 - **Node Schedule**: Agendamento de tarefas
+- **Nodemailer**: Envio de emails de notificação
 
 ## 🚀 Instalação e Configuração
 
@@ -273,6 +311,8 @@ O sistema executa automaticamente as seguintes tarefas:
 ### Endpoints Administrativos
 
 - `GET /qrcode`: Exibe QR code para autenticação do WhatsApp
+- `GET /qrcode-status`: Verifica o status atual do QR code e da conexão
+- `GET /teste-email`: Testa o sistema de notificação por email
 - `POST /teste-lembrete-matinal`: Testa o envio de lembretes de pagamento matinal
 - `POST /teste-lembrete-noturno`: Testa o envio de lembretes de pagamento noturno
 - `POST /teste-mensagem`: Testa o envio de mensagens para um número específico
@@ -326,17 +366,24 @@ Se o bot desconectar, você pode:
    - Verifique se a pasta `tokens` existe e tem permissões de escrita
    - Apague a pasta `tokens` e reinicie o servidor
    - Certifique-se de que o WhatsApp não está aberto em outro dispositivo
+   - Verifique seu email para ver se recebeu uma notificação com o link do QR code
 
-2. **Erro de Índice no Firestore**
+2. **Não recebo emails de notificação do QR code**
+   - Verifique se as variáveis de ambiente relacionadas ao email estão configuradas corretamente
+   - Confirme se o email não está na pasta de spam
+   - Teste o envio de email usando o endpoint `/teste-email`
+   - Verifique os logs para identificar erros no envio de email
+
+3. **Erro de Índice no Firestore**
    - Acesse o link fornecido no erro para criar o índice necessário
    - Aguarde alguns minutos para que o índice seja criado
 
-3. **Pagamentos não são processados**
+4. **Pagamentos não são processados**
    - Verifique as credenciais do Mercado Pago no arquivo .env
    - Confirme se o webhook do Mercado Pago está configurado corretamente
    - Verifique os logs para identificar erros específicos
 
-4. **Bot não responde às mensagens**
+5. **Bot não responde às mensagens**
    - Verifique se o serviço está em execução
    - Confirme se a autenticação do WhatsApp está ativa
    - Reinicie o serviço e escaneie o QR code novamente
@@ -413,8 +460,8 @@ Para suporte ou dúvidas, entre em contato através do WhatsApp: (85) 99268-4035
 
 Para questões técnicas ou contribuições ao projeto, entre em contato com:
 - Pedro Castro - [pedrohenriquecastro.martins@gmail.com](mailto:pedrohenriquecastro.martins@gmail.com)
-- [GitHub](https://github.com/seu-usuario)
-- [LinkedIn](https://linkedin.com/in/seu-perfil)
+- [GitHub](https://github.com/pedcastr)
+- [LinkedIn](https://www.linkedin.com/in/pedro-castro-2504471b7/)
 
 ---
 

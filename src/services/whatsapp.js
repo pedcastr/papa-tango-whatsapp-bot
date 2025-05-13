@@ -4,6 +4,11 @@ const path = require('path');
 const logger = require('../utils/logger');
 const paymentService = require('./payment');
 const { db } = require('../config/firebase');
+const emailSender = require('../utils/emailSender');
+
+// Configurações de email
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'pedrohenriquecastro.martins@gmail.com';
+const SERVER_URL = process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000';
 
 // Pasta para tokens
 const tokensDir = path.join(__dirname, '../../tokens');
@@ -14,6 +19,79 @@ if (!fs.existsSync(tokensDir)) {
 let client = null;
 // Variável para armazenar o QR code
 let currentQrCode = null;
+// Variável para armazenar o timestamp do último QR code
+let lastQrCodeTimestamp = null;
+// Variável para controlar se já enviamos email para o QR code atual
+let qrCodeEmailSent = false;
+
+// Função para configurar conexão robusta
+function setupRobustConnection(client) {
+  // Monitorar estado da sessão com tratamento mais robusto
+  client.onStateChange((state) => {
+    logger.info('Estado da sessão alterado:', state);
+
+    // Reconectar se desconectado
+    if (state === 'CONFLICT') {
+      logger.warn('Conflito detectado. Usando sessão aqui...');
+      client.useHere();
+    } else if (state === 'UNPAIRED' || state === 'UNLAUNCHED') {
+      logger.warn('Sessão desemparelhada ou não iniciada. Tentando reconectar...');
+      setTimeout(() => {
+        client.useHere();
+      }, 3000);
+    }
+  });
+
+  // Verificar estado da conexão periodicamente
+  setInterval(async () => {
+    try {
+      if (!client) return;
+
+      const state = await client.getConnectionState();
+      logger.info(`Verificação periódica do estado da conexão: ${state}`);
+
+      if (state === 'DISCONNECTED') {
+        logger.warn('Conexão desconectada. Tentando reconectar...');
+        try {
+          await client.restart();
+          logger.info('Cliente reiniciado após desconexão');
+        } catch (error) {
+          logger.error('Erro ao reiniciar cliente:', error);
+        }
+      }
+    } catch (error) {
+      logger.error('Erro ao verificar estado da conexão:', error);
+    }
+  }, 3 * 60 * 1000); // A cada 3 minutos
+}
+
+// Função para enviar notificação por email sobre novo QR code
+async function notifyQrCodeByEmail() {
+  try {
+    if (qrCodeEmailSent) {
+      logger.info('Email já enviado para este QR code, ignorando');
+      return;
+    }
+    
+    const qrCodeUrl = `${SERVER_URL}/qrcode`;
+    logger.info(`Enviando notificação de QR code por email para ${ADMIN_EMAIL} com URL ${qrCodeUrl}`);
+    
+    const success = await emailSender.sendQrCodeNotification(ADMIN_EMAIL, qrCodeUrl);
+    
+    if (success) {
+      logger.info('Notificação de QR code enviada com sucesso');
+      qrCodeEmailSent = true;
+    } else {
+      logger.error('Falha ao enviar notificação de QR code');
+    }
+  } catch (error) {
+    logger.error('Erro ao enviar notificação de QR code:', error);
+    logger.error('Detalhes do erro:', error.message);
+    if (error.response) {
+      logger.error('Resposta do servidor de email:', error.response.data);
+    }
+  }
+}
 
 // Inicializar cliente WhatsApp
 async function initWhatsApp() {
@@ -32,7 +110,12 @@ async function initWhatsApp() {
       // Callback para quando o QR code for gerado
       onQR: (qrCode) => {
         currentQrCode = qrCode;
+        lastQrCodeTimestamp = new Date().toISOString();
+        qrCodeEmailSent = false; // Resetar flag para permitir envio de email
         logger.info('Novo QR code gerado');
+
+        // Enviar notificação por email
+        notifyQrCodeByEmail();
       }
     });
 
@@ -41,15 +124,8 @@ async function initWhatsApp() {
     // Configurar manipulador de mensagens recebidas
     client.onMessage(handleIncomingMessage);
 
-    // Monitorar estado da sessão
-    client.onStateChange((state) => {
-      logger.info('Estado da sessão alterado:', state);
-
-      // Reconectar se desconectado
-      if (state === 'CONFLICT' || state === 'UNLAUNCHED') {
-        client.useHere();
-      }
-    });
+    // Configurar conexão robusta
+    setupRobustConnection(client);
 
     return client;
   } catch (error) {
@@ -232,9 +308,15 @@ function getQrCode() {
   return currentQrCode;
 }
 
+// Função para obter o timestamp do último QR code
+function getLastQrCodeTimestamp() {
+  return lastQrCodeTimestamp;
+}
+
 module.exports = {
   initWhatsApp,
   enviarCodigo,
   getClient: () => client,
-  getQrCode
+  getQrCode,
+  getLastQrCodeTimestamp
 };

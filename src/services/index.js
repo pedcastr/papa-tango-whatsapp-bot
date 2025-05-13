@@ -259,6 +259,36 @@ app.post('/teste-mensagem', async (req, res) => {
   }
 });
 
+// Rota para testar o envio de email
+app.get('/teste-email', async (req, res) => {
+  try {
+    const emailSender = require('../utils/emailSender');
+    const success = await emailSender.sendQrCodeNotification(
+      process.env.ADMIN_EMAIL,
+      `${req.protocol}://${req.get('host')}/qrcode`
+    );
+    
+    if (success) {
+      return res.json({
+        success: true,
+        message: 'Email enviado com sucesso'
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        message: 'Falha ao enviar email'
+      });
+    }
+  } catch (error) {
+    console.error('Erro ao enviar email de teste:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao enviar email',
+      error: error.message
+    });
+  }
+});
+
 // Rota para exibir o QR code
 app.get('/qrcode', (req, res) => {
   const qrCode = whatsappService.getQrCode();
@@ -301,6 +331,20 @@ app.get('/qrcode', (req, res) => {
     </body>
     </html>
   `);
+});
+
+// Rota para verificar o status do QR code
+app.get('/qrcode-status', (req, res) => {
+  const qrCode = whatsappService.getQrCode();
+  const lastQrCodeTimestamp = whatsappService.getLastQrCodeTimestamp();
+  const client = whatsappService.getClient();
+  
+  res.json({
+    hasQrCode: qrCode ? true : false,
+    clientConnected: client ? true : false,
+    lastQrCodeGenerated: lastQrCodeTimestamp,
+    serverTime: new Date().toISOString()
+  });
 });
 
 // Iniciar servidor
