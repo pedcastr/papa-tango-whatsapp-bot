@@ -1,0 +1,28 @@
+{
+  "dependencies": {
+    "axios": "^1.9.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "firebase-admin": "^13.3.0",
+    "node-schedule": "^2.1.1",
+    "qrcode": "^1.5.4",
+    "venom-bot": "^5.3.0",
+    "winston": "^3.17.0"
+  },
+  "name": "papa-tango-bot",
+  "version": "1.0.0",
+  "description": "Bot WhatsApp para Papa Tango Aluguel de Motos",
+  "main": "src/index.js",
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "keywords": [],
+  "author": "pedCastr",
+  "license": "ISC",
+  "type": "commonjs"
+}

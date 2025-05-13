@@ -1,0 +1,31 @@
+# Dependências
+node_modules/
+
+# Ambiente
+.env
+.env.*
+!.env.example
+
+# Arquivos de sessão e tokens
+tokens/
+**/tokens/
+
+# Arquivos temporários
+temp/
+**/temp/
+logs/
+*.log
+
+# Arquivos de configuração sensíveis
+serviceAccountKey.json
+**/serviceAccountKey.json
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos de IDE/editores
+.idea/
+.vscode/
+*.sublime-*
+
