@@ -413,8 +413,8 @@ Para suporte ou dúvidas, entre em contato através do WhatsApp: (85) 99268-4035
 
 Para questões técnicas ou contribuições ao projeto, entre em contato com:
 - Pedro Castro - [pedrohenriquecastro.martins@gmail.com](mailto:pedrohenriquecastro.martins@gmail.com)
-- [GitHub](https://github.com/seu-usuario)
-- [LinkedIn](https://linkedin.com/in/seu-perfil)
+- [GitHub](https://github.com/pedcastr)
+- [LinkedIn](https://www.linkedin.com/in/pedro-castro-2504471b7/)
 
 ---
 
