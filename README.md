@@ -14,6 +14,7 @@ Um bot de WhatsApp automatizado para gerenciamento de pagamentos e comunicação
 - [Screenshots](#-screenshots)
 - [Funcionalidades](#-funcionalidades)
 - [Fluxo de Trabalho](#-fluxo-de-trabalho)
+- [Sistema de Notificação por Email](#-sistema-de-notificação-por-email)
 - [Tecnologias Utilizadas](#️-tecnologias-utilizadas)
 - [Instalação e Configuração](#-instalação-e-configuração)
 - [Uso do Bot](#-uso-do-bot)
@@ -198,7 +199,6 @@ O sistema implementa mecanismos para manter a conexão do WhatsApp estável:
 2. **Reconexão Automática**: Tenta reconectar automaticamente em caso de desconexão
 3. **Resolução de Conflitos**: Resolve conflitos de sessão automaticamente
 4. **Notificação por Email**: Envia email quando é necessário escanear um novo QR code
-```
 
 ## 🛠️ Tecnologias Utilizadas
 
