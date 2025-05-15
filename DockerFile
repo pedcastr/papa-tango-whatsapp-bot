@@ -1,40 +1,13 @@
-# Usar imagem oficial Node.js slim (mais leve)
-FROM node:18-slim
+FROM zenika/alpine-chrome:with-node
 
-# Instalar dependências do sistema necessárias para Venom-Bot e Chromium
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libnss3 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libgbm1 \
-    libasound2 \
-    libpangocairo-1.0-0 \
-    libxss1 \
-    libxshmfence1 \
-    libglu1-mesa \
-    libgtk-3-0 \
-    chromium \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-# Definir diretório de trabalho dentro do container
 WORKDIR /app
 
-# Copiar package.json e package-lock.json (se existir)
 COPY package*.json ./
 
-# Instalar dependências do Node.js (produção)
 RUN npm install --production
 
-# Copiar todo o restante do código para dentro do container
 COPY . .
 
-# Expor a porta que seu app usa (3000 por padrão)
 EXPOSE 3000
 
-# Definir variável de ambiente para o Chromium usado pelo Venom-Bot
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-
-# Comando para iniciar o bot
 CMD ["node", "src/services/index.js"]
