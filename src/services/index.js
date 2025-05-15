@@ -5,10 +5,10 @@ const axios = require('axios');
 const logger = require('../utils/logger');
 const whatsappService = require('./whatsapp');
 const scheduler = require('./scheduler');
-const paymentService = require('./payment');
+const paymentService = require('./payment'); 
 const { db } = require('../config/firebase');
 
-// Função para evitar que o serviço adormeça no Render.com
+// Função para evitar que o serviço adormeça no RAILWAY
 function setupKeepAlive() {
   const interval = 14 * 60 * 1000; // 14 minutos (menos que o limite de 15 minutos do Render)
 
@@ -16,7 +16,7 @@ function setupKeepAlive() {
     logger.info('Executando ping para manter o serviço ativo');
 
     // Fazer uma requisição para o próprio serviço
-    const url = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+    const url = process.env.RAILWAY_EXTERNAL_URL || `http://localhost:${PORT}`;
 
     axios.get(url)
       .then(() => logger.info('Ping realizado com sucesso'))
@@ -359,7 +359,7 @@ app.listen(PORT, async () => {
     scheduler.initScheduler();
 
     // Configurar sistema para evitar adormecimento no Render.com
-    if (process.env.RENDER) {
+    if (process.env.RAILWAY) {
       setupKeepAlive();
     }
 

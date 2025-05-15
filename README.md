@@ -402,23 +402,38 @@ Acesse o painel do Render > Logs
 
 ## 🚢 Deploy
 
-### Deploy no Render.com
+### Deploy no Railway
 
-1. Crie uma conta no [Render.com](https://render.com)
-2. Conecte seu repositório GitHub
-3. Crie um novo Web Service
-4. Configure as variáveis de ambiente necessárias:
+1. Crie uma conta no [Railway.app](https://railway.app) e faça login.
+
+2. Crie um novo projeto clicando em **New Project** e escolha **Deploy from GitHub repo**.
+
+3. Conecte seu repositório do GitHub (pode ser o `papa-tango-whatsapp-bot`).
+
+4. Configure as variáveis de ambiente necessárias no Railway, acessando a aba **Settings > Variables** do projeto:
+
    ```
    NODE_ENV=production
    PORT=3000
    FIREBASE_PROJECT_ID=seu-projeto-id
    MERCADO_PAGO_ACCESS_TOKEN=seu-token
+   EMAIL_USER=seu-email@gmail.com
+   EMAIL_PASS=sua-senha-de-app
+   ADMIN_EMAIL=email-do-administrador@gmail.com
+   RAILWAY=true
    ```
-5. Configure o comando de build: `npm install`
-6. Configure o comando de start: `node src/services/index.js`
-7. Defina o plano de hospedagem (o plano gratuito é suficiente para começar)
-8. Faça o deploy e acesse a URL fornecida
-9. Configure um serviço de monitoramento para evitar inatividade (usando o endpoint keep-alive)
+
+5. Configure o comando de start para:
+
+   ```
+   node src/services/index.js
+   ```
+
+6. Inicie o deploy e aguarde o processo terminar.
+
+7. Após o deploy, o Railway vai disponibilizar uma URL pública para seu bot.
+
+8. Caso queira manter o bot ativo e evitar que ele "durma", você pode configurar um serviço externo para fazer pings periódicos (ex: [uptimerobot.com](https://uptimerobot.com)) para a URL do seu bot.
 
 ## 📊 Estrutura do Projeto
 
