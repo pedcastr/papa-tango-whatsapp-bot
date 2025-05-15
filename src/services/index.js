@@ -350,7 +350,7 @@ app.get('/qrcode-status', (req, res) => {
 // Iniciar servidor
 app.listen(PORT, async () => {
   logger.info(`Servidor iniciado na porta ${PORT}`);
-
+ 
   try {
     // Inicializar cliente WhatsApp
     await whatsappService.initWhatsApp();
