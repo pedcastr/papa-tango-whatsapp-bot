@@ -4,8 +4,8 @@ const logger = require('../utils/logger');
 
 // Inicializar Firebase Admin
 try {
-  // Verificar se estamos no ambiente Render.com
-  if (process.env.RENDER) {
+  // Verificar se estamos no ambiente Railway
+  if (process.env.RAILWAY) {
     // Usar variáveis de ambiente para as credenciais
     const serviceAccount = {
       type: 'service_account',
