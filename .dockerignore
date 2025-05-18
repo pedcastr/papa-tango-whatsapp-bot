@@ -6,7 +6,6 @@ Dockerfile
 .gitignore
 .env
 .env.*
-serviceAccountKey.json
 screenshots
 temp
 tokens

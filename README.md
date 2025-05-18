@@ -24,13 +24,16 @@ Um bot de WhatsApp automatizado para gerenciamento de pagamentos e comunicação
 - [Manutenção](#-manutenção)
 - [Solução de Problemas](#-solução-de-problemas)
 - [Deploy](#-deploy)
+- [Testes na EC2](#-testes-na-ec2)
+- [Ajuste de Fuso Horário na EC2](#-ajuste-de-fuso-horário-na-ec2)
+- [Testes Locais com Docker](#-testes-locais-com-docker)
 - [Estrutura do Projeto](#-estrutura-do-projeto)
 - [Roadmap](#-roadmap)
 - [Contato](#-contato)
 
 ## 📋 Visão Geral
 
-O Papa Tango WhatsApp Bot é uma solução automatizada para gerenciar pagamentos, enviar lembretes, gerar boletos e códigos PIX, e fornecer informações sobre contratos de aluguel de motos. O bot se integra com o Firebase para armazenamento de dados e com o Mercado Pago para processamento de pagamentos.
+O Papa Tango WhatsApp Bot é uma solução automatizada para gerenciar pagamentos, enviar lembretes, gerar boletos e códigos PIX, e fornecer informações sobre contratos de aluguel de motos. O bot se integra com o Firebase para armazenamento de dados, com o Mercado Pago para processamento de pagamentos e funciona 24 horas por dia 7 dias por semana, porque está em uma instância EC2 da AWS.
 
 ### Problema Resolvido
 
@@ -182,7 +185,6 @@ Para que o sistema de notificação funcione, as seguintes variáveis de ambient
 EMAIL_USER=seu-email@gmail.com
 EMAIL_PASS=sua-senha-de-app
 ADMIN_EMAIL=email-do-administrador@gmail.com
-RENDER_EXTERNAL_URL=https://seu-app.onrender.com  # Apenas em produção
 ```
 
 ### Endpoints Relacionados
@@ -339,6 +341,216 @@ curl -X POST http://localhost:3000/teste-mensagem \
   -d '{"numero": "5585999999999", "mensagem": "Teste de mensagem"}'
 ```
 
+## 🧪 Testes na EC2
+
+Após realizar o deploy na instância EC2 da AWS, você pode testar as rotas da API para garantir que tudo está funcionando corretamente.
+
+### Passos para testar:
+
+1. **Obtenha o IP público ou domínio da sua instância EC2.**
+
+2. **Substitua `localhost` pelo IP público ou domínio na URL dos endpoints.**
+
+Exemplo para testar lembretes matinais:
+
+```bash
+curl -X POST http://seu-ip-ec2/teste-lembrete-matinal
+```
+
+Exemplo para testar lembretes noturnos:
+```bash
+curl -X POST http://seu-ip-ec2/teste-lembrete-noturno
+```
+
+3. **Testar envio de mensagem específica:**
+
+Enviar informações de pagamento
+```bash
+curl -X POST http://seu-ip-ec2/teste-mensagem \
+  -H "Content-Type: application/json" \
+  -d '{"numero": "5585999999999", "tipo": "info"}'
+```
+Enviar boleto
+```bash
+curl -X POST http://seu-ip-ec2/teste-mensagem \
+  -H "Content-Type: application/json" \
+  -d '{"numero": "5585999999999", "tipo": "boleto"}'
+```
+Enviar PIX
+```bash
+curl -X POST http://seu-ip-ec2/teste-mensagem \
+  -H "Content-Type: application/json" \
+  -d '{"numero": "5585999999999", "tipo": "pix"}'
+```
+Verificar atraso
+```bash
+curl -X POST http://seu-ip-ec2/teste-mensagem \
+  -H "Content-Type: application/json" \
+  -d '{"numero": "5585999999999", "tipo": "atraso"}'
+```
+Enviar mensagem de texto personalizada
+```bash
+curl -X POST http://seu-ip-ec2/teste-mensagem \
+  -H "Content-Type: application/json" \
+  -d '{"numero": "5585999999999", "tipo": "texto", "mensagem": "Teste de mensagem personalizada"}'
+```
+
+4. **Verificar status do servidor:**
+
+```bash
+curl http://SEU_IP_EC2
+```
+
+5. **Testar Envio de Email:**
+```bash
+curl http://seu-ip-ec2/teste-email
+```
+
+6. **Verificar QR code para autenticação:**
+
+Acesse no navegador:
+
+```
+http://SEU_IP_EC2/qrcode
+```
+
+7. **Verificar Status do QR Code:**
+```bash	
+curl http://seu-ip-ec2/qrcode-status
+```
+
+---
+
+## ⏰ Ajuste de Fuso Horário na EC2
+
+Como a instância EC2 pode estar em um fuso horário diferente do Brasil, é importante ajustar o timezone para que as tarefas agendadas (como lembretes diurnos e noturnos) sejam executadas no horário correto.
+
+### Como ajustar o fuso horário:
+
+1. Conecte-se à sua instância EC2 via SSH:
+
+```bash
+ssh -i caminho/para/sua-chave.pem ec2-user@SEU_IP_EC2
+```
+
+2. Verifique o timezone atual:
+
+```bash
+date
+```
+
+3. Ajuste para o fuso horário de São Paulo (GMT-3) (Para Amazon Linux 2 ou Amazon Linux 2023):
+
+```bash
+sudo timedatectl set-timezone America/Sao_Paulo
+```
+
+4. Confirme a alteração:
+
+```bash
+date
+```
+
+---
+
+## 🐳 Testes Locais com Docker
+
+Para facilitar o desenvolvimento e testes locais, você pode rodar o bot dentro de um container Docker. Abaixo está um passo a passo para criar o Dockerfile, configurar o docker-compose e executar o bot localmente.
+
+### Passo 1: Criar o arquivo `Dockerfile` na raiz do projeto
+
+```dockerfile
+FROM node:16-alpine
+
+WORKDIR /app
+
+# Instalar dependências do sistema
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    freetype-dev \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
+
+# Definir variáveis de ambiente para o Puppeteer
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+# Copiar arquivos de dependências
+COPY package*.json ./
+
+# Instalar dependências
+RUN npm install
+
+# Copiar código-fonte
+COPY . .
+
+# Criar diretório para tokens
+RUN mkdir -p tokens && chmod 777 tokens
+
+# Expor porta
+EXPOSE 3000
+
+# Comando para iniciar a aplicação
+CMD ["npm", "start"]
+```
+
+### Passo 2: Criar o arquivo `docker-compose.yml` na raiz do projeto
+
+```yaml
+version: '3'
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASS=${EMAIL_PASS}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+    volumes:
+      - ./src:/app/src
+      - ./tokens:/app/tokens
+      - ./temp:/app/temp
+    restart: unless-stopped
+```
+
+### Passo 3: Construir e rodar o container
+
+No terminal, execute:
+
+```bash
+docker-compose up --build
+```
+
+Verificar logs
+```bash
+docker-compose logs -f
+```
+
+Parar os contêineres
+```bash
+docker-compose down
+```
+
+### Passo 4: Testar localmente
+
+Agora o bot estará rodando em `http://localhost:3000`. Você pode usar os mesmos comandos curl para testar as rotas, por exemplo:
+
+```bash
+curl -X POST http://localhost:3000/teste-lembrete-matinal
+```
+
+### Observações
+
+- O volume `.:/app` permite que alterações no código sejam refletidas imediatamente no container.
+- Certifique-se de configurar corretamente as variáveis de ambiente no arquivo `docker-compose.yml` ou usando um arquivo `.env`.
+
 ## 🔧 Manutenção
 
 ### Monitoramento
@@ -402,38 +614,171 @@ Acesse o painel do Render > Logs
 
 ## 🚢 Deploy
 
-### Deploy no Railway
+### Pré-requisitos
+- Conta na AWS
+- Conhecimentos básicos de EC2 e Docker
+- Chave SSH para acesso à instância
 
-1. Crie uma conta no [Railway.app](https://railway.app) e faça login.
+### Etapa 1: Criar uma Instância EC2
+1. Acesse o [Console AWS](https://aws.amazon.com/console/)
+2. Navegue até o serviço EC2
+3. Clique em "Launch Instance" (Executar instância)
+4. Escolha a Amazon Linux 2023 como sistema operacional
+5. Selecione o tipo de instância t2.micro (elegível para o nível gratuito)
+6. Configure os detalhes da instância conforme necessário
+7. Adicione armazenamento (8GB é suficiente para começar)
+8. Configure grupos de segurança para permitir tráfego nas portas:
+   - SSH (22) - apenas do seu IP
+   - HTTP (80) - de qualquer lugar
+   - HTTPS (443) - de qualquer lugar
+9. Revise e execute a instância
+10. Crie ou selecione um par de chaves para SSH
 
-2. Crie um novo projeto clicando em **New Project** e escolha **Deploy from GitHub repo**.
+### Etapa 2: Conectar à Instância
+```bash
+ssh -i caminho/para/sua-chave.pem ec2-user@seu-ip-publico
+```
 
-3. Conecte seu repositório do GitHub (pode ser o `papa-tango-whatsapp-bot`).
+### Etapa 3: Instalar Docker na Instância
+```bash
+# Atualizar o sistema
+sudo yum update -y
 
-4. Configure as variáveis de ambiente necessárias no Railway, acessando a aba **Settings > Variables** do projeto:
+# Instalar Docker
+sudo yum install -y docker
 
-   ```
-   NODE_ENV=production
-   PORT=3000
-   FIREBASE_PROJECT_ID=seu-projeto-id
-   MERCADO_PAGO_ACCESS_TOKEN=seu-token
-   EMAIL_USER=seu-email@gmail.com
-   EMAIL_PASS=sua-senha-de-app
-   ADMIN_EMAIL=email-do-administrador@gmail.com
-   RAILWAY=true
-   ```
+# Iniciar o serviço Docker
+sudo systemctl start docker
 
-5. Configure o comando de start para:
+# Habilitar Docker para iniciar na inicialização
+sudo systemctl enable docker
 
-   ```
-   node src/services/index.js
-   ```
+# Adicionar o usuário ec2-user ao grupo docker
+sudo usermod -a -G docker ec2-user
 
-6. Inicie o deploy e aguarde o processo terminar.
+# Aplicar as alterações de grupo (reconecte-se após este comando)
+exit
+```
 
-7. Após o deploy, o Railway vai disponibilizar uma URL pública para seu bot.
+### Etapa 4: Instalar Docker Compose
+```bash
+# Instalar Docker Compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 
-8. Caso queira manter o bot ativo e evitar que ele "durma", você pode configurar um serviço externo para fazer pings periódicos (ex: [uptimerobot.com](https://uptimerobot.com)) para a URL do seu bot.
+# Tornar o binário executável
+sudo chmod +x /usr/local/bin/docker-compose
+
+# Verificar a instalação
+docker-compose --version
+```
+
+### Etapa 5: Configurar o Projeto
+1. Crie um diretório para o projeto:
+```bash
+mkdir -p ~/papa-tango-bot
+```
+
+2. Transfira os arquivos do projeto para a instância:
+```bash
+# No seu computador local (PowerShell):
+scp -i "caminho/para/sua-chave.pem" -r "caminho/local/Dockerfile" "caminho/local/docker-compose.yml" "caminho/local/src" ec2-user@seu-ip-publico:~/papa-tango-bot/
+scp -i "caminho/para/sua-chave.pem" "caminho/local/package.json" "caminho/local/package-lock.json" "caminho/local/serviceAccountKey.json" ec2-user@seu-ip-publico:~/papa-tango-bot/
+```
+
+3. Configure o arquivo docker-compose.yml:
+```yaml
+version: '3'
+services:
+  app:
+    build: .
+    ports:
+      - "80:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - AWS=true
+      - EMAIL_USER=seu-email@gmail.com
+      - EMAIL_PASS=sua-senha-de-app
+      - ADMIN_EMAIL=email-do-administrador@gmail.com
+      - AWS_EXTERNAL_URL=http://seu-ip-publico
+    volumes:
+      - ./tokens:/app/tokens
+    restart: always
+```
+
+### Etapa 6: Executar o Bot
+```bash
+cd ~/papa-tango-bot
+mkdir -p tokens
+chmod 777 tokens
+docker-compose up -d --build
+```
+
+### Etapa 7: Autenticar o WhatsApp
+1. Verifique os logs para ver o QR code:
+```bash
+docker-compose logs -f
+```
+
+2. Escaneie o QR code com seu WhatsApp para autenticar o bot
+3. Após a autenticação, o bot estará operacional
+
+### Etapa 8: Configurar Inicialização Automática
+```bash
+# Criar script de inicialização
+cat > ~/startup.sh << 'EOL'
+#!/bin/bash
+cd ~/papa-tango-bot
+docker-compose up -d
+EOL
+
+# Tornar o script executável
+chmod +x ~/startup.sh
+
+# Configurar para executar na inicialização
+echo "@reboot ~/startup.sh" | crontab -
+```
+
+### Monitoramento e Manutenção
+
+#### Verificar Logs
+```bash
+cd ~/papa-tango-bot
+docker-compose logs -f
+```
+
+#### Reiniciar o Bot
+```bash
+cd ~/papa-tango-bot
+docker-compose restart
+```
+
+#### Atualizar o Bot
+1. Transfira os arquivos atualizados para a instância
+2. Reconstrua o contêiner:
+```bash
+cd ~/papa-tango-bot
+docker-compose down
+docker-compose up -d --build
+```
+
+#### Parar o Bot
+```bash
+cd ~/papa-tango-bot
+docker-compose down
+```
+
+### Considerações de Segurança
+- Mantenha a porta SSH (22) aberta apenas para seu IP
+- Use senhas fortes para todos os serviços
+- Considere implementar HTTPS com Let's Encrypt para maior segurança
+- Faça backup regular dos tokens de sessão do WhatsApp
+
+### Monitoramento de Custos
+- A instância t2.micro é elegível para o nível gratuito da AWS por 12 meses
+- Configure alertas de orçamento para evitar cobranças inesperadas
+- Monitore o uso de recursos regularmente no painel da AWS
 
 ## 📊 Estrutura do Projeto
 

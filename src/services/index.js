@@ -8,7 +8,7 @@ const scheduler = require('./scheduler');
 const paymentService = require('./payment'); 
 const { db } = require('../config/firebase');
 
-// Função para evitar que o serviço adormeça no RAILWAY
+// Função para evitar que o serviço adormeça na AWS
 function setupKeepAlive() {
   const interval = 14 * 60 * 1000; // 14 minutos (menos que o limite de 15 minutos do Render)
 
@@ -358,8 +358,8 @@ app.listen(PORT, async () => {
     // Inicializar agendador de tarefas
     scheduler.initScheduler();
 
-    // Configurar sistema para evitar adormecimento no Render.com
-    if (process.env.RAILWAY) {
+    // Configurar sistema para evitar adormecimento na AWS
+    if (process.env.AWS) {
       setupKeepAlive();
     }
 
